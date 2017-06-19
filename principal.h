@@ -12,7 +12,7 @@ void signal_recu(int sig);
 
 /**
  * Met en place la captation du signal sig.
- * Appel la fonction h lorsqu'il est capté.
+ * Appelle la fonction h lorsqu'il est capté.
  * Auteur : Edouard Thiel
  */
 int bor_signal (int sig, void (*h)(int), int options);
