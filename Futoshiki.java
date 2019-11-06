@@ -8,7 +8,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Résolution d'instances du jeu de Futoshiki avec le solveur Choco.
+ *
+ * http://www.choco-solver.org
+ */
 public class Futoshiki {
+	/** Description d'une position */
 	public static class Position {
 		public final int ligne;
 		public final int colonne;
@@ -19,10 +25,17 @@ public class Futoshiki {
 		}
 	}
 
+	/** Contrainte d'infériorité */
 	public static class Contrainte {
+		/** Case plus petite */
 		public final Position petit;
+		/** Case plus grande */
 		public final Position grand;
 
+		/**
+		 * Construit une contrainte avec la ligne, la colonne et le symbole encodé dans le fichier texte (v, ^,
+		 * inférieur ou supérieur)
+		 */
 		public Contrainte(int x, int y, char symbole) {
 			if (symbole == '^') {
 				petit = new Position(x , y);
@@ -41,6 +54,12 @@ public class Futoshiki {
 			}
 		}
 
+		/**
+		 * Injecte la contrainte dans le modèle
+		 * @param model Le modèle choco
+		 * @param intVars La liste des variables utilisées
+		 * @param size La taille de la grille
+		 */
 		public void injecterContrainte(Model model, IntVar[][] intVars, int size) {
 			model.lexChainLess(new IntVar[] {
 					intVars[petit.ligne][petit.colonne],
@@ -49,20 +68,29 @@ public class Futoshiki {
 		}
 	}
 
+	/**
+	 * Résout la grille en affichant une solution
+	 * @param grilleOriginale La grille originale, avec 0 si la case est à remplir
+	 * @param contraintes La liste des contraintes d'infériorité
+	 */
 	public void resoudreGrille(int[][] grilleOriginale, List<Contrainte> contraintes) {
 		Model model = new Model();
 
+		// Liste des variables : une variable par case
 		IntVar[][] intVars = new IntVar[grilleOriginale.length][grilleOriginale.length];
 
 		for (int i = 0 ; i != grilleOriginale.length ; i++) {
 			for (int j = 0 ; j != grilleOriginale.length ; j++) {
 				if (grilleOriginale[i][j] == 0)
+					// Domaine de 1:taille
 					intVars[i][j] = model.intVar(1, grilleOriginale.length);
 				else
+					// Domaine égal à la valeur
 					intVars[i][j] = model.intVar(grilleOriginale[i][j]);
 			}
 		}
 
+		// Toutes les lignes et colonnes ont des cases différentes
 		for (int i = 0 ; i != grilleOriginale.length ; i++) {
 			model.allDifferent(intVars[i]).post();
 		}
@@ -76,10 +104,12 @@ public class Futoshiki {
 			model.allDifferent(colonne).post();
 		}
 
+		// Ajout des contraintes d'infériorité
 		for (Contrainte contrainte : contraintes) {
 			contrainte.injecterContrainte(model, intVars, grilleOriginale.length);
 		}
 
+		// Résolution et affichage
 		if (!model.getSolver().solve()) {
 			System.out.println("Pas de solution");
 		} else {
@@ -93,60 +123,64 @@ public class Futoshiki {
 		}
 	}
 
+	/**
+	 * Résout la grille contenue dans le fichier donné
+	 * @param fichier Le fichier
+	 * @throws IOException
+	 */
 	public void resoudreGrille(String fichier) throws IOException {
+		// Lecture du fichier
 		int[][] grille = null;
 		int taille = 0;
 		List<Contrainte> contraintes = new ArrayList<>();
 
 		BufferedReader br = new BufferedReader(new FileReader(fichier));
 		String line;
-		boolean FOUR = true;
-		int numero_ligne = 0;
+		boolean ligneDeValeurs = true;
+		int numeroLigne = 0;
 
 		while ((line = br.readLine()) != null) {
 			if (grille == null) {
-				System.out.println(line);
+				// Première ligne : taille de la grille
 				taille = Integer.parseInt(line);
-				System.out.println("Taille = " + taille);
 				grille = new int[taille][taille];
 
 				for (int i = 0 ; i != taille ; i++)
 					for (int j = 0 ; j != taille ; j++)
 						grille[i][j] = 0;
 			} else {
-				char[] sss = line.toCharArray();
-				if (FOUR) {
-					for (int i = 0 ; i != sss.length ; i++) {
+				char[] caracteres = line.toCharArray();
+				// TODO : supporter les grilles de tailles supérieures à 9
+				if (ligneDeValeurs) {
+					for (int i = 0 ; i != caracteres.length ; i++) {
 						if (i % 2 == 0) {
-							grille[numero_ligne][i / 2] = sss[i] - '0';
+							grille[numeroLigne][i / 2] = caracteres[i] - '0';
 						} else {
-							if (sss[i] != ' ') {
+							if (caracteres[i] != ' ') {
 								contraintes.add(
-										new Futoshiki.Contrainte(numero_ligne, i / 2, sss[i])
+										new Futoshiki.Contrainte(numeroLigne, i / 2, caracteres[i])
 								);
 							}
 						}
 					}
-				} else {					for (int i = 0 ; i != sss.length ; i++) {
-
-					if (sss[i] != '.') {
-						contraintes.add(
-								new Futoshiki.Contrainte(numero_ligne, i, sss[i])
-						);
+				} else {
+					for (int i = 0 ; i != caracteres.length ; i++) {
+						if (caracteres[i] != '.') {
+							contraintes.add(
+									new Futoshiki.Contrainte(numeroLigne, i, caracteres[i])
+							);
+						}
 					}
+
+					numeroLigne++;
 				}
 
-					numero_ligne ++;
-				}
-
-				FOUR = !FOUR;
+				ligneDeValeurs = !ligneDeValeurs;
 			}
-
-			// process the line.
 		}
 		br.close();
 
-
+		// Résolution
 		resoudreGrille(grille, contraintes);
 	}
 
