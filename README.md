@@ -25,3 +25,6 @@ Le code n'étant pas documenté et écrit rapidement, voici comment l'utiliser e
 
 `new Futoshiki().resoudreGrille("/path/to/file");`
 
+Les performances avec Choco sont meilleures que avec le programme écrit en C.
+(résolution plus rapide et les grilles qui ne sont pas résolues par le solveur
+le sont par Choco).
