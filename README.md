@@ -13,3 +13,15 @@ Compilation : `make all`
 Utilisation : `./solver [nom du fichier] (BT/FC/FCD) (Nom d'une heuristique)`
 
 Afficher l'aide avec toutes les heuristiques gérées : `./solver`
+
+
+## Performances
+
+Une modélisation très basique a été rapidement faite du problème avec le solveur Choco en Java.
+
+La source est disponible dans le fichier `Futoshiki.java`.
+
+Le code n'étant pas documenté et écrit rapidement, voici comment l'utiliser en une ligne Java :
+
+`new Futoshiki().resoudreGrille("/path/to/file");`
+
